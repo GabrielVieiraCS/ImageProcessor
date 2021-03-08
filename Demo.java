@@ -18,7 +18,7 @@ public class Demo extends Component implements ActionListener {
     // List of the options(Original, Negative); correspond to the cases:
     // ************************************
 
-    String descs[] = { "Original", "Negative", "Rescale", "Rescale RND", "Close Comp", "Addition", "Subtraction", "Multiplication", "Division", "Not", "And", "Or", "XOr", "Log FN", "Power-Law"};
+    String descs[] = { "Original", "Negative", "Rescale", "Rescale RND", "Close Comp", "Addition", "Subtraction", "Multiplication", "Division", "Not", "And", "Or", "XOr", "Log FN", "Power-Law", "Look-Up RND", "BPS"};
 
     String descs_Comparision[] = { "Original", "Negative", "Close" };
 
@@ -457,32 +457,113 @@ public class Demo extends Component implements ActionListener {
     }
 
     //POWER-LAW FUNCTION
-    public BufferedImage powFunction(BufferedImage timg) {
+    public BufferedImage powerInput(BufferedImage timg) {
         JFrame f = new JFrame();
         String inputString1 = JOptionPane.showInputDialog(f, "Input the power value (0.01 - 25)");
         double p = Float.valueOf(inputString1).floatValue();
         if (p > 25) {
             p = (double) 25.0;
-        } else if (s < 0.01) {
+        } else if (p < 0.01) {
             p = (double) 0.01;
         }
 
+        BufferedImage outputImage = powFunction(timg, p);
+        return outputImage;
+    }
 
+    public BufferedImage powFunction(BufferedImage timg, double p) {
         int [][][] imageArray = convertToArray(timg);
 
         //To apply power law s = c r^p to images with different powers from 0.01 to 25
-        double c = Math.pow(255, p);
+        double c = Math.pow(255, 1-p);
+        
+        //Image is 255, so we use Y = 2.5
+        double Y = 2.5;
 
         for(int y=0; y < timg.getHeight(); y++){
             for(int x=0; x < timg.getWidth(); x++){
-                for(int p = 1; p < 4; p++){
-                    imageArray[x][y][p] = (int)(c * Math.log(imageArray[x][y][p]));
+                for(int t = 1; t < 4; t++){
+                    imageArray[x][y][t] = (int)(c * Math.pow(imageArray[x][y][t],Y)); 
                 }
             }
         }
 
         return convertToBimage(imageArray);
     }
+
+
+    //RANDOM LOOK-UP TABLE
+    public BufferedImage randomLookUpFunction(BufferedImage timg){
+        int[][][] imageArray = convertToArray(timg);
+
+        int[] lut = new int[256];
+        Random rnd = new Random();
+
+        for(int i = 0; i < lut.length; i++){
+            lut[i] = rnd.nextInt(256);
+        }
+
+        for(int y = 0; y < timg.getHeight(); y++){
+            for(int x = 0; x < timg.getWidth(); x++){
+                imageArray[x][y][1] = lut[imageArray[x][y][1]]; 
+                imageArray[x][y][2] = lut[imageArray[x][y][2]];
+                imageArray[x][y][3] = lut[imageArray[x][y][3]];
+            }
+        }
+        return convertToBimage(imageArray);
+    }
+
+
+    //BIT-PLANE SLICING
+    public BufferedImage bitPlaneSliceFunction(BufferedImage timg){
+        int[][][] imageArray = convertToArray(timg);
+        int bit = 3;
+
+        for(int y = 0; y < timg.getHeight(); y++){
+            for(int x = 0; x < timg.getWidth(); x++){
+                imageArray[x][y][1] = ((imageArray[x][y][1] >> bit) &1)* 255; 
+                imageArray[x][y][2] = ((imageArray[x][y][2] >> bit) &1)* 255; 
+                imageArray[x][y][3] = ((imageArray[x][y][3] >> bit) &1)* 255; 
+            }
+        }
+
+        return convertToBimage(imageArray);
+    }
+
+
+
+    /*
+    ----------------------------------- LAB 5 EXERCISES ---------------------------------------------------------------------------------------------
+    */
+
+    //EX1) FINDING HISTOGRAM
+    public void findHistogram(BufferedImage timg) {
+        int [][][] imageArray = convertToArray(timg);
+
+        for(int k=0; k<256; k++){ // Initialisation
+            HistgramR[k] = 0;
+            HistgramG[k] = 0;
+            HistgramB[k] = 0;
+        }
+
+        for(int y=0; y<timg.height; y++){ // bin histograms
+            for(int x=0; x<timg.width; x++){
+                r = ImageArray[x][y][1]; //r
+                g = ImageArray[x][y][2]; //g
+                b = ImageArray[x][y][3]; //b
+                HistgramR[r]++;
+                HistgramG[g]++;
+                HistgramB[b]++;
+            }
+        }
+
+        for(int k=0; k<256; k++){ // Normalisation
+        nHistgramR[k] = HistgramR[k]/timg.height/timg.width; // r
+        nHistgramG[k] = HistgramG[k]/timg.height/timg.width; // g
+        nHistgramB[k] = HistgramB[k]/timg.height/timg.width; // b
+        }
+    }
+    
 
 
 
@@ -585,7 +666,19 @@ public class Demo extends Component implements ActionListener {
                 currIndex++;
                 return;
             case 14: //POWER-LAW
-                biFiltered = powFunction(bi);
+                biFiltered = powerInput(bi);
+                imageList.add(biFiltered);
+                topIndex++;
+                currIndex++;
+                return;
+            case 15: //LOOK-UP
+                biFiltered = randomLookUpFunction(bi);
+                imageList.add(biFiltered);
+                topIndex++;
+                currIndex++;
+                return;
+            case 16: //BPS
+                biFiltered = bitPlaneSliceFunction(bi);
                 imageList.add(biFiltered);
                 topIndex++;
                 currIndex++;
@@ -681,7 +774,7 @@ public class Demo extends Component implements ActionListener {
         //PANEL
         JPanel panel = new JPanel();
         container.add(panel);
-        panel.add(new JLabel("Main Image Selection: "));
+        panel.add(new JLabel("Image Selection: "));
         panel.add(choices);
         panel.add(new JLabel("Compare With: "));
         //panel.add(compare);
