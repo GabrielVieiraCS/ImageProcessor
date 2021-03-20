@@ -565,7 +565,20 @@ public class Demo extends Component implements ActionListener {
     }
     
 
+    /*
+    ----------------------------------- LAB 6 EXERCISES ---------------------------------------------------------------------------------------------
+    */
 
+    //Array to store all required 3x3 masks
+    int[][][] maskArray = {
+
+    };
+
+    public BufferedImage imageConvolution(BufferedImage timg) {
+        int [][][] imageArray = convertToArray(timg);
+
+        return convertToBimage(imageArray);
+    }
 
 
     // ************************************
