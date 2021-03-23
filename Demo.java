@@ -18,7 +18,8 @@ public class Demo extends Component implements ActionListener {
     // List of the options(Original, Negative); correspond to the cases:
     // ************************************
 
-    String descs[] = { "Original", "Negative", "Rescale", "Rescale RND", "Close Comp", "Addition", "Subtraction", "Multiplication", "Division", "Not", "And", "Or", "XOr", "Log FN", "Power-Law", "Look-Up RND", "BPS"};
+    String descs[] = { "Original", "Negative", "Rescale", "Rescale RND", "Close Comp", "Addition", "Subtraction", "Multiplication", "Division", 
+    "Not", "And", "Or", "XOr", "Log FN", "Power-Law", "Look-Up RND", "BPS", "Histogram  Normalisation", "Convolution", "Salt & Pepper"};
 
     String descs_Comparision[] = { "Original", "Negative", "Close" };
 
@@ -537,33 +538,73 @@ public class Demo extends Component implements ActionListener {
     */
 
     //EX1) FINDING HISTOGRAM
-    public void findHistogram(BufferedImage timg) {
+    public int[][] findHistogram(BufferedImage timg) {
         int [][][] imageArray = convertToArray(timg);
 
+        //Histogram Arrays
+        int[] HistogramR = new int[256];
+        int[] HistogramG = new int[256];
+        int[] HistogramB = new int[256];
+
         for(int k=0; k<256; k++){ // Initialisation
-            HistgramR[k] = 0;
-            HistgramG[k] = 0;
-            HistgramB[k] = 0;
+            HistogramR[k] = 0;
+            HistogramG[k] = 0;
+            HistogramB[k] = 0;
         }
 
-        for(int y=0; y<timg.height; y++){ // bin histograms
-            for(int x=0; x<timg.width; x++){
-                r = ImageArray[x][y][1]; //r
-                g = ImageArray[x][y][2]; //g
-                b = ImageArray[x][y][3]; //b
-                HistgramR[r]++;
-                HistgramG[g]++;
-                HistgramB[b]++;
+        for(int y=0; y<timg.getHeight(); y++){ // bin histograms
+            for(int x=0; x<timg.getWidth(); x++){
+                int r = imageArray[x][y][1]; //r
+                int g = imageArray[x][y][2]; //g
+                int b = imageArray[x][y][3]; //b
+                HistogramR[r]++;
+                HistogramG[g]++;
+                HistogramB[b]++;
             }
         }
 
-        for(int k=0; k<256; k++){ // Normalisation
-        nHistgramR[k] = HistgramR[k]/timg.height/timg.width; // r
-        nHistgramG[k] = HistgramG[k]/timg.height/timg.width; // g
-        nHistgramB[k] = HistgramB[k]/timg.height/timg.width; // b
-        }
+        //pass to normalisation method
+        return new int[][] {HistogramR, HistogramG, HistogramB};
     }
     
+    public void histogramNormalistaion(BufferedImage timg) {
+        int [][] normalised = findHistogram(timg);
+
+        //Histogram Arrays RGB
+        double[] HistogramR = new double[256];
+        double[] HistogramG = new double[256];
+        double[] HistogramB = new double[256];
+
+        for(int k=0; k<256; k++){ // Initialisation
+            HistogramR[k] = normalised[0][k];
+            HistogramG[k] = normalised[1][k];
+            HistogramB[k] = normalised[2][k];
+        }
+
+        for(int k=0; k<256; k++){
+            HistogramR[k] = HistogramR[k] / (timg.getWidth() * timg.getHeight());
+            HistogramG[k] = HistogramR[k] / (timg.getWidth() * timg.getHeight());
+            HistogramB[k] = HistogramR[k] / (timg.getWidth() * timg.getHeight());
+        }
+
+
+        //Print out RGB Components
+        System.out.println("R:");
+        for(int k = 0; k< 256; k++){
+            if(HistogramR[k] != 0) System.out.println(k+": "+ HistogramR[k]);
+        }
+
+        System.out.println("G:");
+        for(int k = 0; k< 256; k++){
+            if(HistogramG[k] != 0) System.out.println(k+": "+ HistogramG[k]);
+        }
+
+        System.out.println("B:");
+        for(int k = 0; k< 256; k++){
+            if(HistogramB[k] != 0) System.out.println(k+": "+HistogramB[k]);
+        }
+
+    }
 
     /*
     ----------------------------------- LAB 6 EXERCISES ---------------------------------------------------------------------------------------------
@@ -571,15 +612,249 @@ public class Demo extends Component implements ActionListener {
 
     //Array to store all required 3x3 masks
     int[][][] maskArray = {
+        {
+            {1,1,1},
+            {1,1,1},        //  AVERAGING
+            {1,1,1,}
+        },
+        {
+            {1,2,1},
+            {2,4,2},        //  WEIGHTED-AVERAGING
+            {1,2,1}
+        },
+        {
+            {0,-1,0},
+            {-1,4,-1},      //  4-NEIGHBOUR LAPLACIAN
+            {0,-1,0}
+        },
+        {
+            {0,-1,-0},
+            {-1,5,-1},      //  4-NEIGHBOUR LAPLACIAN ENHANCEMENT
+            {0,-1,0}
+        },
+        {
+            {-1,-1,-1},
+            {-1,8,-1},      //  8-NEIGHBOUR LAPLACIAN
+            {-1,-1,-1}
+        },
+        {
+            {-1,-1,-1},
+            {-1,8,-1},      //  8-NEIGHBOUR LAPLACIAN ENHANCEMENT
+            {-1,-1,-1}
+        },
+        {
+            {0,0,0},
+            {0,0,-1},      //  ROBERTS
+            {0,1,0}
+        },
+        {
+            {0,0,0},
+            {0,-1,0},      //  ROBERTS ABSOLUTE VALUE CONVERSION
+            {0,0,1}
+        },
+        {
+            {-1,0,1},
+            {-2,0,2},      //  SOBEL X
+            {-1,0,1}
+        },
+        {
+            {-1,-2,-1},
+            {0,0,0},      //  SOBEL Y
+            {1,2,1}
+        },
 
     };
 
+    //Weights for masks
+    public double[] weights = {(1.0/9.0), (1.0/16.0), 1,1,1,1};
+
     public BufferedImage imageConvolution(BufferedImage timg) {
         int [][][] imageArray = convertToArray(timg);
+        int [][][] outImg = new int[imageArray.length][imageArray[0].length][imageArray[0][0].length];
+        // for Mask of size 3x3, no border extension
+        for(int y=1; y<timg.getHeight()-1; y++){
+            for(int x=1; x<timg.getWidth()-1; x++){
+                double r,g,b;
+                r = 0; g = 0; b = 0;
+                for(int s=-1; s<=1; s++){
+                    for(int t=-1; t<=1; t++){
+                        r = r + (maskArray[0][1-s][1-t]*imageArray[x+s][y+t][1]); //r
+                        g = g + (maskArray[0][1-s][1-t]*imageArray[x+s][y+t][2]); //g
+                        b = b + (maskArray[0][1-s][1-t]*imageArray[x+s][y+t][3]); //b
+                    }
+                }
+                outImg[x][y][1] = (int) Math.round(r * weights[0]); //r
+                outImg[x][y][2] = (int) Math.round(g * weights[0]); //g
+                outImg[x][y][3] = (int) Math.round(b * weights[0]); //b
+            }
+        }
 
-        return convertToBimage(imageArray);
+        return convertToBimage(outImg);
+        //return rndShiftRescale(outImg)
     }
 
+     /*
+    ----------------------------------- LAB 7 EXERCISES ---------------------------------------------------------------------------------------------
+    */
+
+    //EX1) SALT & PEPPER
+    public BufferedImage saltAndPepper (BufferedImage timg) {
+        int [][][] imageArray = convertToArray(timg);
+        Random rnd = new Random();
+
+        for(int y=1; y<timg.getHeight()-1; y++){
+            for(int x=1; x<timg.getWidth(); x++) {
+                if (rnd.nextInt(100) >80) {
+                    imageArray[x][y][0] = 0;
+                    imageArray[x][y][1] = 0;
+                    imageArray[x][y][2] = 0;
+                } else if (rnd.nextInt(100) <45) {
+                    imageArray[x][y][0] = 255;
+                    imageArray[x][y][1] = 255;
+                    imageArray[x][y][2] = 255;
+                }
+            }
+        }
+        return convertToBimage(imageArray);
+    }
+    
+    //EX2) MIN-FILTERING
+    public BifferedImage minFiltering(BufferedImage timg){
+        int [][][] imageArray = convertToArray(timg);
+        int [][][] outImg = new int[imageArray.length][imageArray[0].length][imageArray[0][0].length];
+
+        //  3X3
+        int[] rWindow = new int[9];
+        int[] gWindow = new int[9];
+        int[] bWindow = new int[9];
+
+        for (int y=1; y<timg.getHeight()-1; y++) {
+            for (int x=1; x<timg.getWidth()-1; x++) {
+                k = 0;
+                for (int s=-1; s<=1; s++) {
+                    for (int t =-1; t<=1; t++) {
+                        rWindow[k] = imageArray[x+s][y+2][1]; //r
+                        gWindow[k] = imageArray[x+s][y+2][2]; //g
+                        bWindow[k] = imageArray[x+s][y+2][3]; //b
+                        k++;
+                    }
+                }
+                Arrays.sort(rWindow);
+                Arrays.sort(gWindow);
+                Arrays.sort(bWindow);
+                // index 0 = min val 
+                outImg[x][y][1] = rWindow[0]; //r
+                outImg[x][y][2] = rWindow[0]; //g
+                outImg[x][y][3] = rWindow[0]; //b
+            }
+        }
+        return convertToBimage(outImg);
+    }
+
+    //EX3 MAX-FILTERING
+    public BifferedImage maxFiltering(BufferedImage timg){
+        int [][][] imageArray = convertToArray(timg);
+        int [][][] outImg = new int[imageArray.length][imageArray[0].length][imageArray[0][0].length];
+
+        //  3X3
+        int[] rWindow = new int[9];
+        int[] gWindow = new int[9];
+        int[] bWindow = new int[9];
+
+        for (int y=1; y<timg.getHeight()-1; y++) {
+            for (int x=1; x<timg.getWidth()-1; x++) {
+                k = 0;
+                for (int s=-1; s<=1; s++) {
+                    for (int t =-1; t<=1; t++) {
+                        rWindow[k] = imageArray[x+s][y+2][1]; //r
+                        gWindow[k] = imageArray[x+s][y+2][2]; //g
+                        bWindow[k] = imageArray[x+s][y+2][3]; //b
+                        k++;
+                    }
+                }
+                Arrays.sort(rWindow);
+                Arrays.sort(gWindow);
+                Arrays.sort(bWindow);
+                // index 8 = max val 
+                outImg[x][y][1] = rWindow[8]; //r
+                outImg[x][y][2] = rWindow[8]; //g
+                outImg[x][y][3] = rWindow[8]; //b
+            }
+        }
+        return convertToBimage(outImg);
+    }
+
+    //EX4 MIDPOINT-FILTERING
+    public BifferedImage midpointFiltering(BufferedImage timg){
+        int [][][] imageArray = convertToArray(timg);
+        int [][][] outImg = new int[imageArray.length][imageArray[0].length][imageArray[0][0].length];
+
+        //  3X3
+        int[] rWindow = new int[9];
+        int[] gWindow = new int[9];
+        int[] bWindow = new int[9];
+
+        for (int y=1; y<timg.getHeight()-1; y++) {
+            for (int x=1; x<timg.getWidth()-1; x++) {
+                k = 0;
+                for (int s=-1; s<=1; s++) {
+                    for (int t =-1; t<=1; t++) {
+                        rWindow[k] = imageArray[x+s][y+2][1]; //r
+                        gWindow[k] = imageArray[x+s][y+2][2]; //g
+                        bWindow[k] = imageArray[x+s][y+2][3]; //b
+                        k++;
+                    }
+                }
+                Arrays.sort(rWindow);
+                Arrays.sort(gWindow);
+                Arrays.sort(bWindow);
+                // midpoint = min + max /2  
+                outImg[x][y][1] = (rWindow[8] + rWindow[0])/2; //r
+                outImg[x][y][2] = (gWindow[8] + gWindow[0])/2; //g
+                outImg[x][y][3] = (bWindow[8] + bWindow[0])/2; //b
+            }
+        }
+        return convertToBimage(outImg);
+    }
+
+    //EX5) MEDIAN FILTERING
+    // for Window of size 3x3, no border extension
+    public BufferedImage medianFiltering(BufferedImage timg) {
+        int [][][] imageArray = convertToArray(timg);
+        int [][][] outImg = new int[imageArray.length][imageArray[0].length][imageArray[0][0].length];
+
+        //  3X3
+        int[] rWindow = new int[9];
+        int[] gWindow = new int[9];
+        int[] bWindow = new int[9];
+
+        for (int y=1; y<timg.getHeight()-1; y++) {
+            for (int x=1; x<timg.getWidth()-1; x++) {
+                k = 0;
+                for (int s=-1; s<=1; s++) {
+                    for (int t =-1; t<=1; t++) {
+                        rWindow[k] = imageArray[x+s][y+2][1]; //r
+                        gWindow[k] = imageArray[x+s][y+2][2]; //g
+                        bWindow[k] = imageArray[x+s][y+2][3]; //b
+                        k++;
+                    }
+                }
+                Arrays.sort(rWindow);
+                Arrays.sort(gWindow);
+                Arrays.sort(bWindow);
+                // index 4 = middle val 
+                outImg[x][y][1] = rWindow[4]; //r
+                outImg[x][y][2] = gWindow[4]; //g
+                outImg[x][y][3] = bWindow[4]; //b
+            }
+        }
+        return convertToBimage(outImg);
+    }
+
+
+    /*
+    ----------------------------------- LAB 8 EXERCISES ---------------------------------------------------------------------------------------------
+    */
 
     // ************************************
     // You need to register your function here
@@ -695,7 +970,20 @@ public class Demo extends Component implements ActionListener {
                 imageList.add(biFiltered);
                 topIndex++;
                 currIndex++;
-                return;  
+                return;
+            case 17: //HISTOGRAM NORMALISATION
+                histogramNormalistaion(bi);
+                return;
+            case 18: //IMAGE CONVOLUTION
+                biFiltered = imageConvolution(bi);
+                topIndex++;
+                currIndex++;
+                return;
+            case 19: //SALT & PEPPER
+                biFiltered = saltAndPepper(bi);
+                topIndex++;
+                currIndex++;
+                return;
 
         }
 
